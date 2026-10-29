@@ -1,6 +1,6 @@
-> DocuMind AI — Render blueprint. Deploy with:
-> https://dashboard.render.com/blueprints → New → New Blueprint Instance →
-> connect this repository.
+# DocuMind AI — Render blueprint. Deploy with:
+# https://dashboard.render.com/blueprints -> New -> New Blueprint Instance ->
+# connect this repository.
 
 services:
   # API on the free web tier. Sleeping instances rebuild the deterministic
