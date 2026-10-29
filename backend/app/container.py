@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from app.ai.embeddings import FallbackEmbeddings, build_embeddings
 from app.ai.llm import LLMService
@@ -111,3 +111,29 @@ class Container:
         except Exception as error:  # noqa: BLE001 - readiness probe
             logger.warning("readiness check failed", error=str(error))
             return False
+
+
+def build_request_runtime(container: Container, settings: Settings) -> Container:
+    """A container clone with a per-request AI runtime (BYO provider keys).
+
+    Shares the underlying repository and database connection pool, but builds
+    fresh embedding/LLM chains, retriever, workflow and read-path services.
+    Only cheap to construct: provider clients are created lazily by LangChain.
+    """
+    embeddings = build_embeddings(settings)
+    llm = LLMService(settings)
+    entity_extractor = EntityExtractor(settings, llm)
+    retriever = HybridRetriever(container.repository, embeddings, settings)
+    workflow = RAGWorkflow(container.repository, retriever, llm, settings)
+    return replace(
+        container,
+        settings=settings,
+        embeddings=embeddings,
+        llm=llm,
+        entity_extractor=entity_extractor,
+        retriever=retriever,
+        workflow=workflow,
+        documents=DocumentService(container.repository, container.ingestion, settings),
+        chat=ChatService(workflow, retriever, settings),
+        evaluation=EvaluationService(container.repository, workflow, settings),
+    )

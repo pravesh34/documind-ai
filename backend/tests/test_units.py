@@ -409,3 +409,68 @@ async def test_memory_repository_isolates_tenants():
     assert await repository.delete_document("tenant-b", record.id) is False
     assert await repository.delete_document("tenant-a", record.id) is True
     assert await repository.count_documents("tenant-a") == 0
+
+
+# --- Per-request AI overrides (BYO provider keys) --------------------------------
+
+def test_parse_ai_overrides_accepts_camel_case_payload():
+    import json
+
+    from app.api.ai_overrides import parse_ai_overrides
+
+    header = json.dumps(
+        {
+            "llmProvider": "gemini",
+            "geminiApiKey": "  fake-key  ",
+            "embeddingProvider": "huggingface",
+            "hfApiToken": "token",
+        }
+    )
+    overrides = parse_ai_overrides(header)
+
+    assert overrides is not None
+    assert overrides.llm_provider == "gemini"
+    assert overrides.gemini_api_key == "fake-key"  # stripped
+    assert overrides.embedding_provider == "huggingface"
+
+
+def test_parse_ai_overrides_none_and_empty():
+    from app.api.ai_overrides import parse_ai_overrides
+
+    assert parse_ai_overrides(None) is None
+    assert parse_ai_overrides("") is None
+    assert parse_ai_overrides("{}") is None  # nothing to override
+
+
+def test_parse_ai_overrides_rejects_bad_json_and_wrong_types():
+    import json as _json
+
+    from app.api.ai_overrides import parse_ai_overrides
+    from app.core.errors import AppError
+
+    with pytest.raises(AppError) as bad_json:
+        parse_ai_overrides("not-json{")
+    assert bad_json.value.code == "INVALID_AI_CONFIG"
+
+    with pytest.raises(AppError) as wrong_type:
+        parse_ai_overrides(_json.dumps({"llmProvider": "hyperloop"}))
+    assert wrong_type.value.code == "INVALID_AI_CONFIG"
+
+
+def test_apply_overrides_swaps_settings_fields():
+    from app.api.ai_overrides import AiOverrides, apply_overrides
+
+    base = make_settings()
+    overrides = AiOverrides(
+        llmProvider="groq", groqApiKey="g-key", groqChatModel="llama-3.1-8b-instant"
+    )
+    merged = apply_overrides(base, overrides)
+
+    assert merged.llm_provider == "groq"
+    assert merged.groq_api_key == "g-key"
+    assert merged.groq_chat_model == "llama-3.1-8b-instant"
+    # The original settings object is untouched.
+    assert base.llm_provider == "none"
+    assert base.groq_api_key is None
+    # Unlisted fields are inherited from the base.
+    assert merged.embedding_dimensions == base.embedding_dimensions

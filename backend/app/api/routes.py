@@ -8,10 +8,15 @@ import binascii
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, Query, Request, UploadFile
 from fastapi.responses import Response
 from slowapi import Limiter
 
+from app.api.ai_overrides import (
+    AiOverrides,
+    apply_overrides,
+    parse_ai_overrides,
+)
 from app.api.schemas import (
     ChatRequest,
     ChatResponse,
@@ -21,7 +26,7 @@ from app.api.schemas import (
     UploadRequest,
 )
 from app.config import Settings
-from app.container import Container
+from app.container import Container, build_request_runtime
 from app.core.errors import AppError
 from app.core.security import AuthContext, require_auth
 from app.core.serialization import (
@@ -46,6 +51,17 @@ def _validate_uuid(value: str) -> str:
         return str(uuid.UUID(value))
     except (ValueError, AttributeError, TypeError) as error:
         raise AppError(422, "INVALID_DOCUMENT_ID", "Document id must be a UUID.") from error
+
+
+def resolve_runtime(
+    container: Container, x_ai_config: str | None
+) -> tuple[Container, AiOverrides | None]:
+    """Container to serve the request with (per-request AI overrides optional)."""
+    overrides = parse_ai_overrides(x_ai_config)
+    if overrides is None:
+        return container, None
+    runtime = build_request_runtime(container, apply_overrides(container.settings, overrides))
+    return runtime, overrides
 
 
 def _decode_base64(value: str) -> bytes:
@@ -192,8 +208,9 @@ def build_router(settings: Settings, limiter: Limiter) -> APIRouter:
         response: Response,
         payload: ChatRequest,
         auth: AuthContext = Depends(require_auth),
+        x_ai_config: str | None = Header(default=None),
     ) -> dict:
-        container = get_container(request)
+        container, overrides = resolve_runtime(get_container(request), x_ai_config)
         question = payload.query
 
         # Light coreference handling for short follow-up questions.
@@ -234,8 +251,9 @@ def build_router(settings: Settings, limiter: Limiter) -> APIRouter:
         response: Response,
         payload: RetrievalRequestModel,
         auth: AuthContext = Depends(require_auth),
+        x_ai_config: str | None = Header(default=None),
     ) -> dict:
-        container = get_container(request)
+        container, _overrides = resolve_runtime(get_container(request), x_ai_config)
         result = await container.chat.retrieve(
             auth.tenant_id,
             payload.query,
@@ -289,8 +307,9 @@ def build_router(settings: Settings, limiter: Limiter) -> APIRouter:
         response: Response,
         payload: EvalRunRequest | None = None,
         auth: AuthContext = Depends(require_auth),
+        x_ai_config: str | None = Header(default=None),
     ) -> dict:
-        container = get_container(request)
+        container, _overrides = resolve_runtime(get_container(request), x_ai_config)
         tests: list[BenchmarkTestCase] | None = None
 
         custom = payload.custom_tests if payload is not None else None

@@ -130,6 +130,12 @@ Optional hardening for demos: ping `/healthz` every 5-10 min (e.g. with cron-job
 Set only what you have. `LLM_PROVIDER=auto` / `EMBEDDING_PROVIDER=auto` register every
 available provider in priority order and fall through on failure.
 
+**No keys handy? Bring your own from the UI.** The navbar **AI Providers** button lets
+each user paste Gemini/Groq/OpenRouter/Hugging Face/Ollama settings. Keys are stored in
+that browser's localStorage only and sent per request in an `x-ai-config` JSON header —
+the server never persists them. Overrides apply to chat, retrieval and benchmark runs;
+requests without the header use the environment-configured providers above.
+
 | Provider | Free tier | Chat | Embeddings | Env |
 |---|---|---|---|---|
 | **Deterministic (built in)** | unlimited, offline | extractive answers | hashed BoW, 768-d | defaults |

@@ -6,6 +6,8 @@
  * relative URLs work in both modes.
  */
 
+import { aiConfigHeader } from './aiConfig';
+
 export const API_BASE = (
   import.meta.env.VITE_API_BASE_URL as string | undefined
 )?.replace(/\/+$/, '') ?? '/api/v1';
@@ -73,6 +75,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     headers: {
       Accept: 'application/json',
       ...authHeaders(),
+      ...aiConfigHeader(),
       ...(isFormData || body === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(headers as Record<string, string> | undefined),
     },

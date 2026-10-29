@@ -292,3 +292,55 @@ def test_rate_limiting_headers_and_rejection():
         assert blocked.status_code == 429
         assert blocked.json()["error"]["code"] == "RATE_LIMITED"
         assert blocked.headers["retry-after"]
+
+
+# --- Per-request AI overrides (x-ai-config) --------------------------------------
+
+def test_chat_with_ai_overrides_still_answers(client: TestClient):
+    import json
+
+    response = client.post(
+        f"{API}/chat",
+        headers={
+            "x-ai-config": json.dumps(
+                {"llmProvider": "none", "embeddingProvider": "deterministic"}
+            )
+        },
+        json={
+            "query": "What was the consolidated net revenue for Q3 2026?",
+            "topK": 4,
+            "similarityThreshold": 0.2,
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["abstained"] is False
+    assert payload["citations"]
+
+
+def test_chat_with_invalid_ai_config_returns_422(client: TestClient):
+    for header in ("not-json{", '{"llmProvider": "hyperloop"}'):
+        response = client.post(
+            f"{API}/chat",
+            headers={"x-ai-config": header},
+            json={"query": "What was net revenue?", "similarityThreshold": 0.2},
+        )
+        assert response.status_code == 422
+        assert response.json()["error"]["code"] == "INVALID_AI_CONFIG"
+
+
+def test_eval_run_accepts_ai_overrides(client: TestClient):
+    import json
+
+    response = client.post(
+        f"{API}/eval/run",
+        headers={
+            "x-ai-config": json.dumps(
+                {"llmProvider": "none", "embeddingProvider": "deterministic"}
+            )
+        },
+        json={},
+    )
+    assert response.status_code == 200
+    report = response.json()["report"]
+    assert report["totalTests"] > 0
