@@ -1,0 +1,6 @@
+{
+  "name": "DocuMind AI",
+  "description": "Production Graph RAG assistant on FastAPI, LangChain and LangGraph with hybrid retrieval, page citations and a benchmark lab.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
