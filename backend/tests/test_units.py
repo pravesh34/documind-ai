@@ -66,6 +66,16 @@ def test_production_requires_database_url():
         Settings(environment="production", auth_mode="none")
 
 
+def test_production_can_opt_into_memory_backend():
+    settings = Settings(
+        environment="production",
+        allow_memory_backend=True,
+        auth_mode="none",
+    )
+    assert settings.uses_postgres is False
+    assert settings.resolved_auth_mode == "none"
+
+
 def test_production_requires_api_keys_when_api_key_auth():
     with pytest.raises(ValueError, match="API_KEYS"):
         Settings(

@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     database_echo: bool = False
     auto_create_schema: bool = True
     seed_default_documents: bool = True
+    # Allow `ENVIRONMENT=production` without DATABASE_URL (free tiers whose
+    # Postgres expired). The service then runs the in-memory repository.
+    allow_memory_backend: bool = False
 
     # Redis / queue -------------------------------------------------------
     redis_url: str | None = None
@@ -148,8 +151,11 @@ class Settings(BaseSettings):
             raise ValueError("RETRIEVAL_TOP_K must be >= 1")
 
         if self.environment == "production":
-            if not self.database_url:
-                raise ValueError("DATABASE_URL is required in production")
+            if not self.database_url and not self.allow_memory_backend:
+                raise ValueError(
+                    "DATABASE_URL is required in production "
+                    "(set ALLOW_MEMORY_BACKEND=true to run without it)"
+                )
             if self.resolved_auth_mode == "api-key" and not self.api_keys.strip():
                 raise ValueError("API_KEYS is required when AUTH_MODE=api-key")
             if self.auto_create_schema:

@@ -52,7 +52,8 @@ services:
 # Free Postgres (0.1 CPU / 256 MB). NOTE: Render's free PostgreSQL expires
 # after 30 days; when it does, delete this database AND the DATABASE_URL env
 # var (or paste a longer-lived free Postgres such as Neon / Supabase as
-# DATABASE_URL) and the API falls back to the in-memory backend.
+# DATABASE_URL) and add ALLOW_MEMORY_BACKEND=true so the API boots with the
+# in-memory backend under ENVIRONMENT=production.
 databases:
   - name: documind-db
     plan: free

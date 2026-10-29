@@ -102,15 +102,3 @@ def apply_overrides(settings: Settings, overrides: AiOverrides) -> Settings:
     if not updates:
         return settings
     return settings.model_copy(update=updates)
-
-
-def has_any_keys(settings: Settings) -> bool:
-    """Whether any hosted provider credentials are configured at all."""
-    return any(
-        (
-            settings.gemini_api_key,
-            settings.groq_api_key,
-            settings.openrouter_api_key,
-            settings.hf_api_token,
-        )
-    )
