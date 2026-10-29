@@ -19,9 +19,11 @@ export default defineConfig(({ mode }) => ({
     target: 'es2022',
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          icons: ['lucide-react'],
+        // Rollup 4 only accepts the function form of manualChunks.
+        manualChunks(id: string): string | undefined {
+          if (id.includes('node_modules/lucide-react')) return 'icons';
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
+          return undefined;
         },
       },
     },

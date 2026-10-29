@@ -11,8 +11,7 @@ import {
   Target,
   Sparkles,
   ShieldCheck,
-  Zap,
-  Filter
+  Zap
 } from 'lucide-react';
 import { BenchmarkResult, BenchmarkRunReport, BenchmarkTestCase, DocumentItem } from '../types';
 import { apiFetch } from '../lib/api';

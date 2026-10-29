@@ -35,7 +35,6 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocDetail, setSelectedDocDetail] = useState<DocumentDetail | null>(null);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Upload Form State
@@ -52,14 +51,11 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   );
 
   const handleViewDetails = async (id: string) => {
-    setIsLoadingDetail(true);
     try {
       const data = await apiFetch<DocumentDetailResponse>(`/documents/${id}`);
       setSelectedDocDetail(data.document);
     } catch (err) {
       console.error('Failed to load document details', err);
-    } finally {
-      setIsLoadingDetail(false);
     }
   };
 
@@ -203,11 +199,11 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
         {/* Unboxed metadata statistics (Zero-pill discipline) */}
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <span>{documents.length} Ingested Documents</span>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true">Â·</span>
           <span>
             {documents.reduce((acc, d) => acc + d.pageCount, 0)} Total Pages
           </span>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true">Â·</span>
           <span className="font-mono tabular-nums">
             {documents.reduce((acc, d) => acc + d.chunkCount, 0)} Chunks Indexed
           </span>
@@ -307,9 +303,9 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 <h3 className="text-sm font-semibold text-white">{selectedDocDetail.title}</h3>
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
                   <span>{selectedDocDetail.filename}</span>
-                  <span aria-hidden="true">·</span>
+                  <span aria-hidden="true">Â·</span>
                   <span>{selectedDocDetail.pageCount} Pages</span>
-                  <span aria-hidden="true">·</span>
+                  <span aria-hidden="true">Â·</span>
                   <span className="font-mono tabular-nums">{selectedDocDetail.chunks.length} Chunks</span>
                 </div>
               </div>
@@ -335,10 +331,10 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                   >
                     <div className="flex items-center justify-between text-[11px] text-slate-400">
                       <span className="font-mono font-medium text-indigo-400">
-                        Chunk #{index + 1} · Page {chunk.pageNumber}
+                        Chunk #{index + 1} Â· Page {chunk.pageNumber}
                       </span>
                       <span className="font-mono text-slate-500">
-                        {chunk.tokenCount} tokens · chars {chunk.startChar}-{chunk.endChar}
+                        {chunk.tokenCount} tokens Â· chars {chunk.startChar}-{chunk.endChar}
                       </span>
                     </div>
                     <p className="text-slate-300 font-sans leading-relaxed whitespace-pre-wrap">
