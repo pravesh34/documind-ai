@@ -26,7 +26,6 @@ from app.core.middleware import (
     SecurityHeadersMiddleware,
 )
 from app.core.rate_limit import create_limiter
-from app.services.keepalive import KeepAlive
 
 logger = get_logger("main")
 
@@ -41,12 +40,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         container = await Container.create(settings)
         app.state.container = container
         await container.startup()
-        keepalive = KeepAlive(settings)
-        keepalive.start()
         try:
             yield
         finally:
-            await keepalive.stop()
             await container.shutdown()
             app.state.container = None
 

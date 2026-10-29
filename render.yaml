@@ -46,15 +46,6 @@ services:
         value: "true"
       - key: RATE_LIMIT_CHAT
         value: "20/minute"
-      # Keep-alive: ping /healthz every 7 minutes so the free instance never
-      # hits Render's ~15-minute idle sleep. Set SELF_PING_URL to this
-      # service's public URL (used verbatim; role it back if you switch plans).
-      - key: SELF_PING_ENABLED
-        value: "true"
-      - key: SELF_PING_URL
-        sync: false
-      - key: SELF_PING_INTERVAL_SECONDS
-        value: "420"
 
   # Optional-but-recommended persistent store. NOTE: Render's free PostgreSQL
   # expires after 30 days; when it does, delete this database service AND the

@@ -123,11 +123,7 @@ both platforms. Steps:
 5. Verify: `https://documind-api-xxxx.onrender.com/readyz` returns 200, then ask
    anything in the UI â€” answers come back grounded with page citations.
 
-Keep-alive: the API pings its own `/healthz` every 7 minutes when
-`SELF_PING_ENABLED=true` and `SELF_PING_URL` is set to its public URL (both
-already configured in `render.yaml`) — requests through Render's proxy count
-as inbound traffic, so the free instance stays warm without any external
-cron service.
+Optional hardening for demos: ping `/healthz` every 5-10 min (e.g. with cron-job.org or uptime-robot) to keep the free instance warm and avoid cold starts.
 
 ## 5. Free provider matrix
 

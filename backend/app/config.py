@@ -63,12 +63,6 @@ class Settings(BaseSettings):
     celery_result_backend: str | None = None
     background_enrichment: bool = True
 
-    # Keep-alive self-ping (free tiers, e.g. Render web services that sleep
-    # after ~15 min idle). Disabled by default.
-    self_ping_enabled: bool = False
-    self_ping_url: str | None = None
-    self_ping_interval_seconds: int = 420
-
     # Security ------------------------------------------------------------
     auth_mode: AuthMode | None = None
     api_keys: str = ""
