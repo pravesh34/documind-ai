@@ -5,23 +5,23 @@ retrieval loop over a **FastAPI** service, with a React + Tailwind UI for docume
 library management, grounded chat with page citations, a benchmark lab and a live
 source-export view.
 
-Everything runs on **free or local AI providers** — and with **zero credentials** the
+Everything runs on **free or local AI providers** â€” and with **zero credentials** the
 system still works end to end (hashed embeddings + extractive answers).
 
 ```
-React 19 + Vite + Tailwind  ──►  FastAPI /api/v1
-                                     │
-                     ┌───────────────┴────────────────┐
-                     │        LangGraph workflow      │
-                     │ analyze → retrieve → grade     │
-                     │   ↺ rewrite      ↓ generate    │
-                     │            verify ↺ revise     │
-                     │              ↓ abstain/finalize│
-                     └───────────────┬────────────────┘
-                                     │
+React 19 + Vite + Tailwind  â”€â”€â–º  FastAPI /api/v1
+                                     â”‚
+                     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                     â”‚        LangGraph workflow      â”‚
+                     â”‚ analyze â†’ retrieve â†’ grade     â”‚
+                     â”‚   â†º rewrite      â†“ generate    â”‚
+                     â”‚            verify â†º revise     â”‚
+                     â”‚              â†“ abstain/finalizeâ”‚
+                     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                     â”‚
               Hybrid retrieval: pgvector HNSW + BM25 + entity graph (RRF)
-                                     │
-            PostgreSQL 17 + pgvector · Redis · Celery · free LLM APIs
+                                     â”‚
+            PostgreSQL 17 + pgvector Â· Redis Â· Celery Â· free LLM APIs
 ```
 
 ---
@@ -30,9 +30,9 @@ React 19 + Vite + Tailwind  ──►  FastAPI /api/v1
 
 | Capability | Implementation |
 |---|---|
-| **Agentic orchestration** | `backend/app/rag/workflow.py` — a compiled LangGraph `StateGraph` with conditional edges and two bounded loops (retrieval rewrite ≤ 2, citation revision ≤ 1). |
+| **Agentic orchestration** | `backend/app/rag/workflow.py` â€” a compiled LangGraph `StateGraph` with conditional edges and two bounded loops (retrieval rewrite â‰¤ 2, citation revision â‰¤ 1). |
 | **Query understanding** | Query normalisation, intent classification, keyword/entity extraction, deterministic multi-query expansion plus optional LLM expansion (`rag/query.py`). |
-| **Hybrid retrieval** | Dense cosine search (pgvector HNSW) ∪ PostgreSQL full-text search, fused with Reciprocal Rank Fusion `k=60` (`rag/retrieval.py`, `repositories/postgres.py`). |
+| **Hybrid retrieval** | Dense cosine search (pgvector HNSW) âˆª PostgreSQL full-text search, fused with Reciprocal Rank Fusion `k=60` (`rag/retrieval.py`, `repositories/postgres.py`). |
 | **Graph RAG** | Per-chunk salient entities, IDF-weighted entity co-occurrence edges, one-hop expansion with capped fan-out (`rag/graph.py`, `rag/entities.py`). |
 | **Relevance grading** | Query-term coverage + unknown-entity ratio, with an optional LLM judge (`rag/grading.py`). Unknown entities force a rewrite or abstention instead of a hallucination. |
 | **Grounded generation** | Numbered passages, mandatory `[n]` citations, strict system prompt (`rag/prompts.py`). |
@@ -64,11 +64,11 @@ are ingested at startup. Open <http://localhost:8000/docs>.
 ```bash
 # 2. Frontend (separate terminal, project root)
 npm install
-npm run dev        # http://localhost:5173, proxies /api → :8000
+npm run dev        # http://localhost:5173, proxies /api â†’ :8000
 ```
 
 > The UI's **Architecture & Export** tab streams the real backend source tree from the
-> running service — it is not a mock.
+> running service â€” it is not a mock.
 
 ## 3. Docker Compose (full stack)
 
@@ -90,7 +90,46 @@ pass `API_KEYS=key:tenant` and enter the key once in the header's **API Key** bu
 localStorage.setItem('documind.apiKey', 'dev-local-key');
 ```
 
-## 4. Free provider matrix
+## 4. Free cloud deployment (Render API + Vercel frontend)
+
+`render.yaml` (Render Blueprint) and `vercel.json` in the repo root configure
+both platforms. Steps:
+
+1. **Render â€” API:** <https://dashboard.render.com/blueprints> â†’ *New Blueprint
+   Instance* â†’ connect this repo â†’ **Apply**. It provisions:
+   - `documind-api` (Python 3.13, free tier): `pip install .`,
+     `uvicorn app.main:app --port $PORT --proxy-headers`, health check `/readyz`.
+   - `documind-db` (free PostgreSQL, auto-injects `DATABASE_URL` â€” pgvector is
+     created by the idempotent schema bootstrap on first boot).
+   - Prompts for `CORS_ORIGINS`; set it to your Vercel URL
+     (e.g. `https://documind-ai.vercel.app`) once known. `API_KEYS` is
+     auto-generated â€” note it from the environment tab.
+   - Free-tier notes: the web service sleeps after ~15 min idle (cold start
+     â‰ˆ 40 s; the seed corpus rebuilds itself in-memory each wake), and the free
+     Postgres expires after 30 days â€” swap in a Neon/Supabase URL or delete the
+     DB service + `DATABASE_URL` var to keep running in-memory.
+2. **Vercel â€” frontend:** <https://vercel.com/new> â†’ import the repo.
+   Framework preset: *Vite* (from `vercel.json`). Before the first deploy add,
+   under Environment Variables:
+   ```
+   VITE_API_BASE_URL = https://documind-api.onrender.com   (your Render URL)
+   ```
+3. **Connect the two:** copy your Render service URL
+   (`https://documind-api-xxxx.onrender.com`) into the `CORS_ORIGINS` env var on
+   Render, and your Vercel domain (including any wildcard preview domain if you
+   want previews to work) into `VITE_API_BASE_URL` on Vercel, then redeploy both.
+4. Open the Vercel URL â†’ paste the generated `API_KEYS` value into the header
+   **API Key** button once (stored in the browser's localStorage).
+5. Verify: `https://documind-api-xxxx.onrender.com/readyz` returns 200, then ask
+   anything in the UI â€” answers come back grounded with page citations.
+
+Keep-alive: the API pings its own `/healthz` every 7 minutes when
+`SELF_PING_ENABLED=true` and `SELF_PING_URL` is set to its public URL (both
+already configured in `render.yaml`) — requests through Render's proxy count
+as inbound traffic, so the free instance stays warm without any external
+cron service.
+
+## 5. Free provider matrix
 
 Set only what you have. `LLM_PROVIDER=auto` / `EMBEDDING_PROVIDER=auto` register every
 available provider in priority order and fall through on failure.
@@ -98,11 +137,11 @@ available provider in priority order and fall through on failure.
 | Provider | Free tier | Chat | Embeddings | Env |
 |---|---|---|---|---|
 | **Deterministic (built in)** | unlimited, offline | extractive answers | hashed BoW, 768-d | defaults |
-| **Ollama** | unlimited, local | ✅ `llama3.2:3b` | ✅ `nomic-embed-text` | `OLLAMA_BASE_URL` |
-| **Google Gemini** | free tier | ✅ `gemini-2.5-flash` | ✅ `gemini-embedding-001` | `GEMINI_API_KEY` |
-| **Groq** | free tier | ✅ `llama-3.3-70b-versatile` | — | `GROQ_API_KEY` |
-| **OpenRouter** | `:free` models | ✅ | — | `OPENROUTER_API_KEY` |
-| **Hugging Face** | free inference credits | — | ✅ `BAAI/bge-small-en-v1.5` | `HF_API_TOKEN` |
+| **Ollama** | unlimited, local | âœ… `llama3.2:3b` | âœ… `nomic-embed-text` | `OLLAMA_BASE_URL` |
+| **Google Gemini** | free tier | âœ… `gemini-2.5-flash` | âœ… `gemini-embedding-001` | `GEMINI_API_KEY` |
+| **Groq** | free tier | âœ… `llama-3.3-70b-versatile` | â€” | `GROQ_API_KEY` |
+| **OpenRouter** | `:free` models | âœ… | â€” | `OPENROUTER_API_KEY` |
+| **Hugging Face** | free inference credits | â€” | âœ… `BAAI/bge-small-en-v1.5` | `HF_API_TOKEN` |
 
 Notes:
 
@@ -114,19 +153,19 @@ Notes:
 - Every LLM call is retried with exponential jitter and falls back across providers;
   final fallback is the deterministic extractive answerer.
 
-## 5. Configuration
+## 6. Configuration
 
 All settings live in `backend/app/config.py` (Pydantic Settings) and are documented in
 `.env.example`. Production validation enforces:
 
 - `DATABASE_URL` is set
 - `API_KEYS` is non-empty when `AUTH_MODE=api-key` (the production default)
-- `CHUNK_OVERLAP < CHUNK_SIZE`, `64 ≤ EMBEDDING_DIMENSIONS ≤ 2000`
+- `CHUNK_OVERLAP < CHUNK_SIZE`, `64 â‰¤ EMBEDDING_DIMENSIONS â‰¤ 2000`
 
 Key knobs: `RETRIEVAL_TOP_K`, `SIMILARITY_THRESHOLD`, `MAX_RETRIEVAL_ATTEMPTS`,
 `GROUNDING_THRESHOLD`, `GRAPH_EXPANSION_ENABLED`, `RATE_LIMIT_CHAT`.
 
-## 6. API surface
+## 7. API surface
 
 Base path `/api/v1`. All responses are camelCase.
 
@@ -143,17 +182,17 @@ Base path `/api/v1`. All responses are camelCase.
 | `POST` | `/eval/run` | Run the suite (`customTests` to override) |
 | `GET` | `/export/files`, `/export/download` | Source browser / zip |
 | `GET` | `/info` | Runtime provider + config summary |
-| — | `/healthz`, `/readyz`, `/metrics` | Ops probes (no auth) |
+| â€” | `/healthz`, `/readyz`, `/metrics` | Ops probes (no auth) |
 
 Auth: `x-api-key: <key>` or `Authorization: Bearer <key>` when `AUTH_MODE=api-key`.
 
-## 7. Data model (PostgreSQL + pgvector)
+## 8. Data model (PostgreSQL + pgvector)
 
-- `tenants` — tenant registry
-- `documents` — metadata, extracted `pages` (jsonb), status, embedding status
-- `chunks` — page-aware text, `vector(768)` embedding, generated `tsv`, char offsets
-- `chunk_entities` — normalized entity index for graph expansion
-- `benchmark_reports` — JSONB report history
+- `tenants` â€” tenant registry
+- `documents` â€” metadata, extracted `pages` (jsonb), status, embedding status
+- `chunks` â€” page-aware text, `vector(768)` embedding, generated `tsv`, char offsets
+- `chunk_entities` â€” normalized entity index for graph expansion
+- `benchmark_reports` â€” JSONB report history
 
 Schema bootstrap is idempotent DDL under `pg_advisory_xact_lock`, so N replicas can boot
 concurrently without racing (`backend/app/db/init_db.py`).
@@ -176,13 +215,13 @@ verification, abstention on negative tests, tenant isolation, API error envelope
 
 | Symptom | Check |
 |---|---|
-| `/readyz` 503 | `curl /readyz` → `checks.repository`; verify `DATABASE_URL` and pgvector extension. |
-| Chat returns extractive text | `/api/v1/info` → `chatProviders` is `["extractive"]`; no provider key/Ollama reachable. |
+| `/readyz` 503 | `curl /readyz` â†’ `checks.repository`; verify `DATABASE_URL` and pgvector extension. |
+| Chat returns extractive text | `/api/v1/info` â†’ `chatProviders` is `["extractive"]`; no provider key/Ollama reachable. |
 | `embeddingStatus: unavailable` | Remote embedding failed; deterministic vectors remain active. Inspect worker logs. |
 | Slow first query | Model cold start; `latencyMs` and the per-node `trace` isolate generation vs retrieval. |
 | 429 responses | Raise `RATE_LIMIT_DEFAULT` / `RATE_LIMIT_CHAT` or configure Redis-backed limiter. |
 
-Scaling: API and worker are stateless — scale horizontally. pgvector HNSW handles
+Scaling: API and worker are stateless â€” scale horizontally. pgvector HNSW handles
 millions of chunks per node; beyond that shard by `tenant_id`. Redis backs rate limiting
 and the Celery broker.
 

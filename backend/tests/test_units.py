@@ -30,6 +30,7 @@ from app.rag.entities import extract_entities
 from app.rag.graph import EntityGraph
 from app.rag.query import deterministic_rewrites, normalise_question
 from app.repositories.memory import MemoryDocumentRepository
+from app.services.keepalive import KeepAlive
 
 from tests.conftest import make_settings
 
@@ -409,3 +410,46 @@ async def test_memory_repository_isolates_tenants():
     assert await repository.delete_document("tenant-b", record.id) is False
     assert await repository.delete_document("tenant-a", record.id) is True
     assert await repository.count_documents("tenant-a") == 0
+
+
+async def test_keepalive_disabled_by_default_and_without_url():
+    disabled = KeepAlive(make_settings(self_ping_enabled=False, self_ping_url="http://x"))
+    no_url = KeepAlive(make_settings(self_ping_enabled=True, self_ping_url=None))
+
+    assert disabled.enabled is False
+    assert no_url.enabled is False
+
+    disabled.start()
+    no_url.start()
+    assert disabled._task is None and no_url._task is None
+
+    await disabled.stop()
+    await no_url.stop()
+
+
+async def test_keepalive_start_stop_lifecycle_and_interval_clamp():
+    keepalive = KeepAlive(
+        make_settings(
+            self_ping_enabled=True,
+            self_ping_url="http://127.0.0.1:9/",
+            self_ping_interval_seconds=1,
+        )
+    )
+    keepalive.start()
+
+    assert keepalive._task is not None
+    assert keepalive.interval == 30  # clamped up to the 30s floor
+    assert not keepalive._task.done()
+
+    await keepalive.stop()
+    assert keepalive._task is None
+
+
+async def test_keepalive_start_is_idempotent():
+    keepalive = KeepAlive(make_settings(self_ping_enabled=True, self_ping_url="http://x"))
+    keepalive.start()
+    first = keepalive._task
+    keepalive.start()
+
+    assert keepalive._task is first
+    await keepalive.stop()
