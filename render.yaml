@@ -31,7 +31,7 @@ services:
       - key: API_KEYS
         generateValue: true
       # Comma-separated origins; put your Vercel URL here, e.g.
-      # https://documind-ai.vercel.app,https://documind-ai-*.vercel.app
+      # https://documind-ai.vercel.app
       - key: CORS_ORIGINS
         sync: false
       # Free tier: deterministic embeddings + extractive answers (no keys).
@@ -46,13 +46,15 @@ services:
         value: "true"
       - key: RATE_LIMIT_CHAT
         value: "20/minute"
+      - key: WEB_CONCURRENCY
+        value: "1"
 
-  # Optional-but-recommended persistent store. NOTE: Render's free PostgreSQL
-  # expires after 30 days; when it does, delete this database service AND the
-  # DATABASE_URL env var (or paste a longer-lived free Postgres such as Neon /
-  # Supabase as DATABASE_URL) and the API falls back to the in-memory backend.
-  - type: pgsql
-    name: documind-db
+# Free Postgres (0.1 CPU / 256 MB). NOTE: Render's free PostgreSQL expires
+# after 30 days; when it does, delete this database AND the DATABASE_URL env
+# var (or paste a longer-lived free Postgres such as Neon / Supabase as
+# DATABASE_URL) and the API falls back to the in-memory backend.
+databases:
+  - name: documind-db
     plan: free
     databaseName: documind
     user: documind
