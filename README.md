@@ -112,7 +112,7 @@ both platforms. Steps:
    Framework preset: *Vite* (from `vercel.json`). Before the first deploy add,
    under Environment Variables:
    ```
-   VITE_API_BASE_URL = https://documind-api.onrender.com   (your Render URL)
+   VITE_API_BASE_URL = https://documind-api.onrender.com   (your Render URL; /api/v1 is appended automatically)
    ```
 3. **Connect the two:** copy your Render service URL
    (`https://documind-api-xxxx.onrender.com`) into the `CORS_ORIGINS` env var on

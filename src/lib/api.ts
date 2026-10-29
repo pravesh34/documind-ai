@@ -8,9 +8,21 @@
 
 import { aiConfigHeader } from './aiConfig';
 
-export const API_BASE = (
+/**
+ * Normalize the configured API base. Accepts either a bare origin
+ * (`https://api.example.com`) or an explicit prefix (`.../api/v1`), so a
+ * missing `/api/v1` can never silently 404 every request.
+ */
+function normalizeApiBase(raw: string | undefined): string {
+  const value = (raw ?? '').trim().replace(/\/+$/, '');
+  if (!value) return '/api/v1';
+  if (/\/api\/v\d+$/i.test(value)) return value;
+  return `${value}/api/v1`;
+}
+
+export const API_BASE = normalizeApiBase(
   import.meta.env.VITE_API_BASE_URL as string | undefined
-)?.replace(/\/+$/, '') ?? '/api/v1';
+);
 
 export class ApiError extends Error {
   readonly status: number;
