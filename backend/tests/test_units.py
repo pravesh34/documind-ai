@@ -471,6 +471,9 @@ def test_apply_overrides_swaps_settings_fields():
     assert merged.groq_chat_model == "llama-3.1-8b-instant"
     # The original settings object is untouched.
     assert base.llm_provider == "none"
-    assert base.groq_api_key is None
+    # The base's Groq config (if any) is left as-is, even when an override
+    # replaces it. (The local .env may legitimately store a real key.)
+    assert base.groq_api_key != "g-key"
+    assert base.groq_chat_model != "llama-3.1-8b-instant"
     # Unlisted fields are inherited from the base.
     assert merged.embedding_dimensions == base.embedding_dimensions

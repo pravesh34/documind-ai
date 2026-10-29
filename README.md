@@ -141,7 +141,7 @@ requests without the header use the environment-configured providers above.
 | **Deterministic (built in)** | unlimited, offline | extractive answers | hashed BoW, 768-d | defaults |
 | **Ollama** | unlimited, local | âœ… `llama3.2:3b` | âœ… `nomic-embed-text` | `OLLAMA_BASE_URL` |
 | **Google Gemini** | free tier | âœ… `gemini-2.5-flash` | âœ… `gemini-embedding-001` | `GEMINI_API_KEY` |
-| **Groq** | free tier | âœ… `llama-3.3-70b-versatile` | â€” | `GROQ_API_KEY` |
+| **Groq** | free tier | âœ… `openai/gpt-oss-120b` | â€” | `GROQ_API_KEY` |
 | **OpenRouter** | `:free` models | âœ… | â€” | `OPENROUTER_API_KEY` |
 | **Hugging Face** | free inference credits | â€” | âœ… `BAAI/bge-small-en-v1.5` | `HF_API_TOKEN` |
 
